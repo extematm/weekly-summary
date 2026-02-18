@@ -1,5 +1,6 @@
 import requests
 from datetime import datetime, timedelta, timezone
+import re
 
 # -------------------------
 # CONFIG
@@ -25,10 +26,18 @@ def get_last_week_commits(repo):
         raise Exception(f"GitHub API error: {response.status_code}")
     
     commits = response.json()
-    commit_messages = [
-        f"- {commit['commit']['author']['name']}: {commit['commit']['message']}"
-        for commit in commits
-    ]
+    norway_offset = timedelta(hours=1)  # Norway winter time UTC+1
+    commit_messages = []
+    for commit in commits:
+        date_str = commit['commit']['author']['date']
+        # Parse UTC datetime
+        dt_utc = datetime.fromisoformat(date_str[:-1]).replace(tzinfo=timezone.utc)
+        # Convert to Norway time (simple offset for winter)
+        dt_norway = dt_utc + norway_offset
+        # Format human readable
+        human_date = dt_norway.strftime('%Y-%m-%d %H:%M:%S')
+        message = commit['commit']['message']
+        commit_messages.append(f"- {human_date}: {message}")
     
     return "\n".join(commit_messages) if commit_messages else "No commits in the last week."
 
@@ -36,7 +45,7 @@ def summarize_commits(commit_text):
     """
     Summarize commit messages using Ollama.
     """
-    prompt = f"Summarize the following GitHub commit activity for a weekly update. Keep it very short. No longer than 100 words for top management to understand the weeks progress:\n\n{commit_text}"
+    prompt = f"Summarize the following GitHub commit activity for a weekly update. Focus on key progress, security changes, and updates. Keep it very concise, under 100 words, structured for management review:\n\n{commit_text}"
     
     payload = {
         "model": OLLAMA_MODEL,
@@ -51,6 +60,8 @@ def summarize_commits(commit_text):
     
     data = response.json()
     summary = data['response']
+    # Remove everything before and including </think> if present
+    summary = re.sub(r'.*</think>', '', summary).strip()
     return summary
 
 # -------------------------
