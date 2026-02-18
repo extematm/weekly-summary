@@ -36,7 +36,7 @@ def summarize_commits(commit_text):
     """
     Summarize commit messages using Ollama.
     """
-    prompt = f"Summarize the following GitHub commit activity for a weekly update, keep it very short, highly informative with numbers if they are important. The target audience is the team management who are interested in progress and productivity and this response shall provide a stomach feeling of the overall progress/security. Write no more then three sentence paragraphs:\n\n{commit_text}"
+    prompt = f"Summarize the following GitHub commit activity for a weekly update, keep it very short, highly informative with numbers if they are important. The target audience is the team management who are interested in progress and productivity and this response shall provide a stomach feeling of the overall progress/security. Write no more then two sentence paragraphs and keep it very structured for simple and quick reading:\n\n{commit_text}"
     
     payload = {
         "model": OLLAMA_MODEL,
