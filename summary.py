@@ -1,5 +1,8 @@
 import requests
 from datetime import datetime, timedelta, timezone
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+import re
 
 # -------------------------
 # CONFIG
@@ -57,6 +60,29 @@ def summarize_commits(commit_text):
     summary = data['response']
     return summary
 
+def save_summary_pdf(summary_text, filename_hint="summary"):
+    """
+    Save the summary as a PDF report with a filename like date_smallsummaryname.pdf
+    """
+    from datetime import datetime
+    # Clean filename_hint to be filesystem safe and short
+    safe_hint = re.sub(r'[^a-zA-Z0-9]+', '_', filename_hint)[:20]
+    date_str = datetime.now().strftime("%Y%m%d")
+    filename = f"{date_str}_{safe_hint}.pdf"
+    c = canvas.Canvas(filename, pagesize=A4)
+    width, height = A4
+    c.setFont("Helvetica", 12)
+    y = height - 40
+    for line in summary_text.splitlines():
+        c.drawString(40, y, line)
+        y -= 18
+        if y < 40:
+            c.showPage()
+            c.setFont("Helvetica", 12)
+            y = height - 40
+    c.save()
+    print(f"PDF report saved as: {filename}")
+
 # -------------------------
 # MAIN
 # -------------------------
@@ -70,4 +96,5 @@ if __name__ == "__main__":
     #print("Last weeks commits/changes:\n")
     summary = summarize_commits(commits)
     print("Commit Summary. \n", summary)
+    save_summary_pdf(summary)
 
