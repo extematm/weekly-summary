@@ -4,6 +4,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 import re
 import os
+import textwrap
 
 # -------------------------
 # CONFIG
@@ -65,6 +66,7 @@ def save_summary_pdf(summary_text, raw_commits, filename_hint="summary"):
     """
     Save the summary as a PDF report with a filename like date_smallsummaryname.pdf
     The summary appears first, followed by the raw commits list.
+    Wrap long lines to fit the page width.
     """
     from datetime import datetime
     # Clean filename_hint to be filesystem safe and short
@@ -76,33 +78,37 @@ def save_summary_pdf(summary_text, raw_commits, filename_hint="summary"):
     filename = os.path.join(reports_dir, f"{date_str}_{safe_hint}.pdf")
     c = canvas.Canvas(filename, pagesize=A4)
     width, height = A4
+    margin = 40
+    max_line_width = int((width - 2 * margin) // 7)  # Approx chars per line for Helvetica 12
     c.setFont("Helvetica-Bold", 14)
-    y = height - 40
-    c.drawString(40, y, "Summary:")
+    y = height - margin
+    c.drawString(margin, y, "Summary:")
     y -= 24
     c.setFont("Helvetica", 12)
     for line in summary_text.splitlines():
-        c.drawString(40, y, line)
-        y -= 18
-        if y < 40:
-            c.showPage()
-            c.setFont("Helvetica", 12)
-            y = height - 40
+        for wrapped in textwrap.wrap(line, width=max_line_width):
+            c.drawString(margin, y, wrapped)
+            y -= 18
+            if y < margin:
+                c.showPage()
+                c.setFont("Helvetica", 12)
+                y = height - margin
     y -= 12
     c.setFont("Helvetica-Bold", 14)
-    if y < 60:
+    if y < margin + 20:
         c.showPage()
-        y = height - 40
-    c.drawString(40, y, "Raw Commits:")
+        y = height - margin
+    c.drawString(margin, y, "Raw Commits:")
     y -= 24
     c.setFont("Helvetica", 12)
     for line in raw_commits.splitlines():
-        c.drawString(40, y, line)
-        y -= 18
-        if y < 40:
-            c.showPage()
-            c.setFont("Helvetica", 12)
-            y = height - 40
+        for wrapped in textwrap.wrap(line, width=max_line_width):
+            c.drawString(margin, y, wrapped)
+            y -= 18
+            if y < margin:
+                c.showPage()
+                c.setFont("Helvetica", 12)
+                y = height - margin
     c.save()
     print(f"PDF report saved as: {filename}")
 
