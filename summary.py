@@ -5,7 +5,7 @@ import openai
 # -------------------------
 # CONFIG
 # -------------------------
-GITHUB_REPO = "octocat/Hello-World"  # Change to any public repo
+GITHUB_REPO = "extematm/weekly-summary"  # Change to any public repo
 OPENAI_API_KEY = "YOUR_OPENAI_API_KEY"  # Set your API key
 
 # -------------------------
