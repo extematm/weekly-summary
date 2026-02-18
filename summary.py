@@ -1,12 +1,12 @@
 import requests
-from datetime import datetime, timedelta
-import openai
+from datetime import datetime, timedelta, timezone
 
 # -------------------------
 # CONFIG
 # -------------------------
 GITHUB_REPO = "extematm/weekly-summary"  # Change to any public repo
-OPENAI_API_KEY = "YOUR_OPENAI_API_KEY"  # Set your API key
+OLLAMA_MODEL = "lfm2.5-thinking:latest"  # Change to your installed Ollama model
+OLLAMA_URL = "http://localhost:11434/api/generate"
 
 # -------------------------
 # HELPER FUNCTIONS
@@ -16,7 +16,7 @@ def get_last_week_commits(repo):
     """
     Fetch commits from the last week for a given GitHub repo.
     """
-    one_week_ago = datetime.utcnow() - timedelta(days=7)
+    one_week_ago = datetime.now(timezone.utc) - timedelta(days=7)
     url = f"https://api.github.com/repos/{repo}/commits"
     params = {"since": one_week_ago.isoformat() + "Z"}
     response = requests.get(url, params=params)
@@ -34,18 +34,23 @@ def get_last_week_commits(repo):
 
 def summarize_commits(commit_text):
     """
-    Summarize commit messages using OpenAI.
+    Summarize commit messages using Ollama.
     """
-    openai.api_key = OPENAI_API_KEY
     prompt = f"Summarize the following GitHub commit activity for a weekly update:\n\n{commit_text}"
     
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.7
-    )
+    payload = {
+        "model": OLLAMA_MODEL,
+        "prompt": prompt,
+        "stream": False
+    }
     
-    summary = response['choices'][0]['message']['content']
+    response = requests.post(OLLAMA_URL, json=payload)
+    
+    if response.status_code != 200:
+        raise Exception(f"Ollama API error: {response.status_code}")
+    
+    data = response.json()
+    summary = data['response']
     return summary
 
 # -------------------------
