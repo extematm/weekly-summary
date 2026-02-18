@@ -42,7 +42,7 @@ def summarize_commits(commit_text):
     """
     Summarize commit messages using Ollama.
     """
-    prompt = f"Summarize this data. Make the summary very structured for management (management does not understand code jargon, so keep it simple) to understand the last weeks progress:\n\n{commit_text}"
+    prompt = f"Please answer ONLY in English. Do not use any other language. Make the summary very structured for management (management does not understand code jargon, so keep it simple) to understand the last weeks progress:\n\n{commit_text}"
     
     payload = {
         #"think": False,
