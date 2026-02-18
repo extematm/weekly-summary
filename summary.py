@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 # CONFIG
 # -------------------------
 GITHUB_REPO = "extematm/weekly-summary"  # Change to any public repo
-OLLAMA_MODEL = "lfm2.5-thinking"  # Change to your installed Ollama model
+OLLAMA_MODEL = "qwen:0.5b"  # Change to your installed Ollama model
 OLLAMA_URL = "http://localhost:11434/api/generate"  # Ollama API endpoint /generate or /chat 
 # HELPER FUNCTIONS
 # -------------------------
@@ -42,9 +42,10 @@ def summarize_commits(commit_text):
     """
     Summarize commit messages using Ollama.
     """
-    prompt = f"Summarize the following GitHub commit activity for a weekly update. Focus on key progress, security changes, and updates. Keep it very concise, under 100 words, structured for management review:\n\n{commit_text}"
+    prompt = f"Summarize the following GitHub commit activity for a weekly update. Focus on key progress, security changes, and updates. Keep it very short. Make the summary very very structured so that management is able to review last weeks progress/work:\n\n{commit_text}"
     
     payload = {
+        #"think": False,
         "model": OLLAMA_MODEL,
         "prompt": prompt,
         "stream": False
