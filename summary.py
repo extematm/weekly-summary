@@ -1,15 +1,12 @@
 import requests
 from datetime import datetime, timedelta, timezone
-import re
 
 # -------------------------
 # CONFIG
 # -------------------------
 GITHUB_REPO = "extematm/weekly-summary"  # Change to any public repo
-OLLAMA_MODEL = "lfm2.5-thinking:latest"  # Change to your installed Ollama model
-OLLAMA_URL = "http://localhost:11434/api/generate"
-
-# -------------------------
+OLLAMA_MODEL = "lfm2.5-thinking"  # Change to your installed Ollama model
+OLLAMA_URL = "http://localhost:11434/api/generate"  # Ollama API endpoint /generate or /chat 
 # HELPER FUNCTIONS
 # -------------------------
 
@@ -52,16 +49,11 @@ def summarize_commits(commit_text):
         "prompt": prompt,
         "stream": False
     }
-    
     response = requests.post(OLLAMA_URL, json=payload)
-    
     if response.status_code != 200:
         raise Exception(f"Ollama API error: {response.status_code}")
-    
     data = response.json()
     summary = data['response']
-    # Remove everything before and including </think> if present
-    summary = re.sub(r'.*</think>', '', summary).strip()
     return summary
 
 # -------------------------
