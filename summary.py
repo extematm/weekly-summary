@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 import re
+import os
 
 # -------------------------
 # CONFIG
@@ -60,20 +61,42 @@ def summarize_commits(commit_text):
     summary = data['response']
     return summary
 
-def save_summary_pdf(summary_text, filename_hint="summary"):
+def save_summary_pdf(summary_text, raw_commits, filename_hint="summary"):
     """
     Save the summary as a PDF report with a filename like date_smallsummaryname.pdf
+    The summary appears first, followed by the raw commits list.
     """
     from datetime import datetime
     # Clean filename_hint to be filesystem safe and short
     safe_hint = re.sub(r'[^a-zA-Z0-9]+', '_', filename_hint)[:20]
     date_str = datetime.now().strftime("%Y%m%d")
-    filename = f"{date_str}_{safe_hint}.pdf"
+    # Ensure 'reports' directory exists
+    reports_dir = "reports"
+    os.makedirs(reports_dir, exist_ok=True)
+    filename = os.path.join(reports_dir, f"{date_str}_{safe_hint}.pdf")
     c = canvas.Canvas(filename, pagesize=A4)
     width, height = A4
-    c.setFont("Helvetica", 12)
+    c.setFont("Helvetica-Bold", 14)
     y = height - 40
+    c.drawString(40, y, "Summary:")
+    y -= 24
+    c.setFont("Helvetica", 12)
     for line in summary_text.splitlines():
+        c.drawString(40, y, line)
+        y -= 18
+        if y < 40:
+            c.showPage()
+            c.setFont("Helvetica", 12)
+            y = height - 40
+    y -= 12
+    c.setFont("Helvetica-Bold", 14)
+    if y < 60:
+        c.showPage()
+        y = height - 40
+    c.drawString(40, y, "Raw Commits:")
+    y -= 24
+    c.setFont("Helvetica", 12)
+    for line in raw_commits.splitlines():
         c.drawString(40, y, line)
         y -= 18
         if y < 40:
@@ -92,9 +115,7 @@ if __name__ == "__main__":
     commits = get_last_week_commits(GITHUB_REPO)
     print("Raw commit activity:\n", commits, "\n")
     print("----------------------------------------------\n")
-    
-    #print("Last weeks commits/changes:\n")
     summary = summarize_commits(commits)
     print("Commit Summary. \n", summary)
-    save_summary_pdf(summary)
+    save_summary_pdf(summary, commits)
 
