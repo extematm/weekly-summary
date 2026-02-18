@@ -64,8 +64,10 @@ def summarize_commits(commit_text):
 if __name__ == "__main__":
     print(f"Fetching last week's commits from {GITHUB_REPO}...\n")
     commits = get_last_week_commits(GITHUB_REPO)
-    #print("Raw commit activity:\n", commits, "\n")
+    print("Raw commit activity:\n", commits, "\n")
+    print("----------------------------------------------\n")
     
     #print("Last weeks commits/changes:\n")
     summary = summarize_commits(commits)
-    print(summary)
+    print("Commit Summary. \n", summary)
+
