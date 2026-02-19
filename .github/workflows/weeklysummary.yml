@@ -1,0 +1,87 @@
+name: Weekly AI Summary
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'  # Every Monday at 08:00 UTC
+  workflow_dispatch:
+
+jobs:
+  summarize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+          pip install openai
+
+      - name: Fetch last week's commits
+        id: fetch_commits
+        run: |
+          python <<EOF
+import requests
+from datetime import datetime, timedelta, timezone
+import os
+
+github_repo = os.environ['GITHUB_REPOSITORY']
+one_week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+url = f"https://api.github.com/repos/{github_repo}/commits"
+params = {"since": one_week_ago.isoformat() + "Z", "per_page": 100}
+all_commits = []
+while url:
+    response = requests.get(url, params=params)
+    params = {}
+    if response.status_code != 200:
+        raise Exception(f"GitHub API error: {response.status_code}")
+    commits = response.json()
+    all_commits.extend(commits)
+    link = response.headers.get('Link', '')
+    next_url = None
+    for part in link.split(','):
+        if 'rel=\"next\"' in part:
+            next_url = part[part.find('<')+1:part.find('>')]
+            break
+    url = next_url
+commit_messages = [
+    f"- {commit['commit']['author']['date']}: {commit['commit']['message']}"
+    for commit in all_commits
+]
+with open('commits.txt', 'w', encoding='utf-8') as f:
+    f.write('\n'.join(commit_messages) if commit_messages else 'No commits in the last week.')
+EOF
+
+      - name: Summarize with OpenAI
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python <<EOF
+import openai
+with open('commits.txt', 'r', encoding='utf-8') as f:
+    commit_text = f.read()
+prompt = f"Summarize the following GitHub commit activity for a weekly update. Focus on key progress, security changes, and updates. Keep it very concise, under 100 words, structured for management review:\n\n{commit_text}"
+openai.api_key = os.environ['OPENAI_API_KEY']
+response = openai.ChatCompletion.create(
+    model="gpt-3.5-turbo",
+    messages=[{"role": "user", "content": prompt}],
+    temperature=0.7
+)
+summary = response['choices'][0]['message']['content']
+print('--- AI Weekly Summary ---')
+print(summary)
+with open('weekly_summary.txt', 'w', encoding='utf-8') as f:
+    f.write(summary)
+EOF
+
+      - name: Upload summary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-summary
+          path: weekly_summary.txt
