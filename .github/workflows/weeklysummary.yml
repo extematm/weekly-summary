@@ -32,7 +32,6 @@ jobs:
           python fetch_activity.py
 
       - name: Summarize with OpenAI
-prompt = (
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GITHUB_REPOSITORY: ${{ github.repository }}
