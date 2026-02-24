@@ -25,11 +25,6 @@ jobs:
           pip install requests openai
 
       - name: Fetch last week's repository activity
-github_repo = os.environ['GITHUB_REPOSITORY']
-def get_paginated(url, params):
-time_params = {
-def in_window(iso_ts):
-pull_lines = []
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
